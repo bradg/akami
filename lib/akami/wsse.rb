@@ -51,6 +51,10 @@ module Akami
       !!@digest
     end
 
+    def base64enc?
+      !!@base64enc
+    end
+
     attr_writer :digest, :base64enc
 
     # Returns whether to generate a wsse:UsernameToken header.
@@ -96,7 +100,7 @@ module Akami
           "wsu:Created" => timestamp,
           "wsse:Password" => digest_password,
           :attributes! => { "wsse:Password" => { "Type" => PASSWORD_DIGEST_URI } }
-      elsif base64enc
+      elsif base64enc?
         security_hash :wsse, "UsernameToken",
           "wsse:Username" => username,
           "wsse:Password" => base64_password,
