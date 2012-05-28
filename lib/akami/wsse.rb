@@ -22,6 +22,9 @@ module Akami
     # PasswordDigest URI.
     PASSWORD_DIGEST_URI = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest"
 
+    # PasswordDigest URI.
+    PASSWORD_BASE64 = "Base64"
+
     # Returns a value from the WSSE Hash.
     def [](key)
       hash[key]
@@ -34,10 +37,11 @@ module Akami
 
     # Sets authentication credentials for a wsse:UsernameToken header.
     # Also accepts whether to use WSSE digest authentication.
-    def credentials(username, password, digest = false)
+    def credentials(username, password, digest = false, base64enc = false)
       self.username = username
       self.password = password
       self.digest = digest
+      self.base64enc = base64enc
     end
 
     attr_accessor :username, :password, :created_at, :expires_at
@@ -47,7 +51,7 @@ module Akami
       !!@digest
     end
 
-    attr_writer :digest
+    attr_writer :digest, :base64enc
 
     # Returns whether to generate a wsse:UsernameToken header.
     def username_token?
@@ -92,6 +96,11 @@ module Akami
           "wsu:Created" => timestamp,
           "wsse:Password" => digest_password,
           :attributes! => { "wsse:Password" => { "Type" => PASSWORD_DIGEST_URI } }
+      elsif base64enc
+        security_hash :wsse, "UsernameToken",
+          "wsse:Username" => username,
+          "wsse:Password" => base64_password,
+          :attributes! => { "wsse:Password" => { "Type" => PASSWORD_BASE64} }
       else
         security_hash :wsse, "UsernameToken",
           "wsse:Username" => username,
@@ -123,6 +132,10 @@ module Akami
     def digest_password
       token = nonce + timestamp + password
       Base64.encode64(Digest::SHA1.hexdigest(token)).chomp!
+    end
+
+    def base64_password
+      Base64.encode64(password)
     end
 
     # Returns a WSSE nonce.
